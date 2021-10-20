@@ -44,11 +44,13 @@ There are 134 aisles and the most items ordered from "fresh vegetables" and "fre
 ai_plot = instacart %>%
   count(aisle) %>%
   filter(n > 10000) %>%
-  arrange(n) 
-
-ggplot(ai_plot, aes(x = aisle, y = n)) + geom_point() + 
+  mutate(aisle = factor(aisle),
+         aisle = fct_reorder(aisle, n)) %>% 
+  ggplot(aes(x = aisle, y = n)) + geom_point() + 
   theme(axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 0.5))
-  
+
+ggsave("ai_plot.png")
+knitr::include_graphics("ai_plot.png")  
 ```
 
 Most of them are less than 40000.
@@ -129,13 +131,14 @@ In 2002, there were 36 states that were observed at 7 or more locations and Penn
 spag_df = brfss_df %>%
   filter(response == "Excellent") %>%
   group_by(state, year) %>%
-  summarise(mean_data_value = mean(data_value, na.rm = TRUE))
-knitr::kable(head(spag_df[1:4, ]))
-
-ggplot(spag_df, aes(x = year, y = mean_data_value,
+  summarise(mean_data_value = mean(data_value, na.rm = TRUE)) %>% 
+  ggplot(aes(x = year, y = mean_data_value,
                     color = state), show.legend = FALSE) + 
   geom_line(aes(group = state), alpha = 0.5) + 
   theme(legend.position = "right")
+
+ggsave("spag_plot.png")
+knitr::include_graphics("spag_plot.png")
 ```
 
 Different states had different trends. Most of mean_data_value were between 15 and 30.
@@ -146,12 +149,13 @@ panel_df = brfss_df %>%
          year %in% c("2006", "2010")) %>% 
   mutate(response = factor(
     response, levels = c("Poor", "Fair", "Good",
-                         "Very good", "Excellent")))
-
-
-ggplot(panel_df, aes(x = response, y = data_value)) + 
+                         "Very good", "Excellent"))) %>% 
+  ggplot(aes(x = response, y = data_value)) + 
   geom_point() + 
   facet_grid(.~year)
+
+ggsave("two_panel_plot.png")
+knitr::include_graphics("two_panel_plot.png")
 ```
 
 The distributions of data_value for responses in NY State are similar for the year 2006 and 2010.
@@ -197,12 +201,16 @@ accel_panel_df = accel_df %>%
   filter(sum_activity_counts > 2000) %>%
   mutate(day = factor(
     day, levels = c("Sunday", "Monday", "Tuesday",
-                         "Wednesday", "Thursday", "Friday", "Saturday")))
-
-ggplot(accel_panel_df, 
-       aes(x = activity_min, y = sum_activity_counts, 
+                         "Wednesday", "Thursday", "Friday", "Saturday"))) %>%
+  ggplot(aes(x = activity_min, y = sum_activity_counts, 
            group = day, color = day)) + 
   geom_point(alpha = 0.5) 
+
+ggsave("accel_panel_plot.png")
+knitr::include_graphics("accel_panel_plot.png")
 ```
 
 The activity counts rose significantly on Friday around 9 PM and Saturday around 11 AM.
+
+
+
