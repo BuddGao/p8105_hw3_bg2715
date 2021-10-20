@@ -21,7 +21,7 @@ scale_colour_discrete = scale_colour_viridis_d
 scale_fill_discrete = scale_fill_viridis_d
 ```
 
-Problem 1
+## Problem 1
 
 Loading data.
 ```{r}
@@ -46,7 +46,8 @@ ai_plot = instacart %>%
   filter(n > 10000) %>%
   arrange(n) 
 
-ggplot(ai_plot, aes(x = aisle, y = n)) + geom_point() + theme(axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 0.5))
+ggplot(ai_plot, aes(x = aisle, y = n)) + geom_point() + 
+  theme(axis.text.x = element_text(angle = 75, hjust = 0.5, vjust = 0.5))
   
 ```
 
@@ -54,7 +55,9 @@ Most of them are less than 40000.
 
 ```{r}
 bdp_df = instacart %>%
-  filter(aisle %in% c("baking ingredients", "dog food care", "packaged vegetables fruits")) %>%  
+  filter(aisle %in% c("baking ingredients", 
+                      "dog food care", 
+                      "packaged vegetables fruits")) %>%  
   group_by(aisle, product_name) %>%
   summarise(n_times = n()) %>%
   top_n(n = 3)
@@ -65,7 +68,8 @@ The most popular item in “baking ingredients”, “dog food care”, and “p
 
 ```{r}
 pc_df = instacart %>%
-  filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) %>%
+  filter(product_name %in% c("Pink Lady Apples",
+                             "Coffee Ice Cream")) %>%
   group_by(product_name, order_dow) %>%
   summarise(mean_hour = mean(order_hour_of_day)) %>%
   pivot_wider(
@@ -73,8 +77,80 @@ pc_df = instacart %>%
     values_from = mean_hour
   ) 
 
-colnames(pc_df) = c('product_name', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat')
+colnames(pc_df) = c('product_name', 'Sun', 'Mon', 
+                    'Tue', 'Wed', 'Thu', 'Fri', 'Sat')
 knitr::kable(pc_df)
 ```
 The mean hour of ordering of coffee ice cream is greater than that of pink lady apples except for Friday.
 
+## Problem 2
+
+Do some data cleaning.
+```{r}
+data("brfss_smart2010")
+
+brfss_df = brfss_smart2010 %>%
+  janitor::clean_names() %>%
+  filter(topic == "Overall Health", response %in% 
+           c("Excellent","Very good","Good","Fair","Poor")) %>%
+  mutate(response = recode(response,
+        "Poor" = "1","Fair" = "2","Good" = "3",
+        "Very good" = "4","Excellent" = "5"
+        )) %>% 
+      arrange(response) %>%  
+  mutate(response = recode(response,
+        "1" = "Poor","2" = "Fair","3" = "Good",
+        "4" = "Very good","5" = "Excellent"
+    ))
+colnames(brfss_df)[2:3] = c("state","location")
+knitr::kable(head(brfss_df[1:4, ]))
+```
+
+```{r}
+st_loc02 = brfss_df %>%
+  filter(year == "2002") %>%
+  group_by(state) %>%
+  summarise(location = n()) %>%
+  filter(location >= 7) %>%
+  arrange(-location)
+knitr::kable(head(st_loc02[1:4, ]))
+
+st_loc10 = brfss_df %>%
+  filter(year == "2010") %>%
+  group_by(state) %>%
+  summarise(location = n()) %>%
+  filter(location >= 7) %>%
+  arrange(-location)
+knitr::kable(head(st_loc10[1:4, ]))
+```
+In 2002, there were 36 states that were observed at 7 or more locations and Pennsylvania were observed at 50 locations. In 2010, there were 45 states that were observed at 7 or more locations and Florida were observed at 205 locations. 
+
+```{r}
+spag_df = brfss_df %>%
+  filter(response == "Excellent") %>%
+  group_by(state, year) %>%
+  summarise(mean_data_value = mean(data_value, na.rm = TRUE))
+knitr::kable(head(spag_df[1:4, ]))
+
+ggplot(spag_df, aes(x = year, y = mean_data_value,
+                    color = state), show.legend = FALSE) + 
+  geom_line(aes(group = state), alpha = 0.5) + 
+  theme(legend.position = "right")
+```
+
+Different states had different trends. Most of mean_data_value were between 15 and 30.
+
+```{r}
+panel_df = brfss_df %>%
+  filter(state == "NY",
+         year %in% c("2006", "2010")) %>% 
+  mutate(response = factor(
+    response, levels = c("Poor", "Fair", "Good", "Very good", "Excellent")))
+
+
+ggplot(panel_df, aes(x = response, y = data_value)) + 
+  geom_point() + 
+  facet_grid(.~year)
+```
+
+The distributions of data_value for responses in NY State are similar for the year 2006 and 2010.
