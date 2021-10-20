@@ -46,7 +46,7 @@ ai_plot = instacart %>%
   filter(n > 10000) %>%
   mutate(aisle = factor(aisle),
          aisle = fct_reorder(aisle, n)) %>% 
-  ggplot(aes(x = aisle, y = n)) + geom_point() + 
+  ggplot(aes(x = aisle, y = n)) + geom_point(colour = "#FF0000FF") + 
   theme(axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 0.5))
 
 ggsave("ai_plot.png")
@@ -151,7 +151,7 @@ panel_df = brfss_df %>%
     response, levels = c("Poor", "Fair", "Good",
                          "Very good", "Excellent"))) %>% 
   ggplot(aes(x = response, y = data_value)) + 
-  geom_point() + 
+  geom_point(colour = "#FF0000FF") + 
   facet_grid(.~year)
 
 ggsave("two_panel_plot.png")
