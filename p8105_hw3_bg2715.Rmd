@@ -5,8 +5,8 @@ output: github_document
 
 ```{r setup, include=FALSE}
 library(tidyverse)
-library(rvest)
-library(httr)
+library(p8105.datasets)
+
 knitr::opts_chunk$set(
   fig.width = 6,
   fig.asp = .6,
@@ -21,4 +21,60 @@ scale_colour_discrete = scale_colour_viridis_d
 scale_fill_discrete = scale_fill_viridis_d
 ```
 
+Problem 1
+
+Loading data.
+```{r}
+data("instacart")
+instacart %>%
+  head(3)
+```
+Short description:
+This dataset has 1384617 rows and 15 columns. Each row represent a single item ordered and each column represent a feature/information of that order. Key variables are "aisle", "product_name", "order_dow", "order_hour_of_day" and so on. For example, the first line means user 112108 ordered bulgarian yogurt from aisle yogurt in department dairy eggs at ten o'clock on Thursday.
+```{r}
+ai_df = instacart %>%
+  count(aisle) %>%
+  arrange(-n)
+  knitr::kable(head(ai_df[1:4, ]))
+```
+
+There are 134 aisles and the most items ordered from "fresh vegetables" and "fresh fruits" aisles.
+
+```{r}
+ai_plot = instacart %>%
+  count(aisle) %>%
+  filter(n > 10000) %>%
+  arrange(n) 
+
+ggplot(ai_plot, aes(x = aisle, y = n)) + geom_point() + theme(axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 0.5))
+  
+```
+
+Most of them are less than 40000.
+
+```{r}
+bdp_df = instacart %>%
+  filter(aisle %in% c("baking ingredients", "dog food care", "packaged vegetables fruits")) %>%  
+  group_by(aisle, product_name) %>%
+  summarise(n_times = n()) %>%
+  top_n(n = 3)
+  knitr::kable(bdp_df)
+```
+
+The most popular item in “baking ingredients”, “dog food care”, and “packaged vegetables fruits” is "Light Brown Sugar" (499), "Snack Sticks Chicken & Rice Recipe Dog Treats" (30) and "Organic Baby Spinach" (9784) respectively.
+
+```{r}
+pc_df = instacart %>%
+  filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) %>%
+  group_by(product_name, order_dow) %>%
+  summarise(mean_hour = mean(order_hour_of_day)) %>%
+  pivot_wider(
+    names_from = order_dow,
+    values_from = mean_hour
+  ) 
+
+colnames(pc_df) = c('product_name', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat')
+knitr::kable(pc_df)
+```
+The mean hour of ordering of coffee ice cream is greater than that of pink lady apples except for Friday.
 
