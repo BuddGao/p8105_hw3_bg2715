@@ -47,7 +47,7 @@ ai_plot = instacart %>%
   arrange(n) 
 
 ggplot(ai_plot, aes(x = aisle, y = n)) + geom_point() + 
-  theme(axis.text.x = element_text(angle = 75, hjust = 0.5, vjust = 0.5))
+  theme(axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 0.5))
   
 ```
 
@@ -145,7 +145,8 @@ panel_df = brfss_df %>%
   filter(state == "NY",
          year %in% c("2006", "2010")) %>% 
   mutate(response = factor(
-    response, levels = c("Poor", "Fair", "Good", "Very good", "Excellent")))
+    response, levels = c("Poor", "Fair", "Good",
+                         "Very good", "Excellent")))
 
 
 ggplot(panel_df, aes(x = response, y = data_value)) + 
@@ -154,3 +155,54 @@ ggplot(panel_df, aes(x = response, y = data_value)) +
 ```
 
 The distributions of data_value for responses in NY State are similar for the year 2006 and 2010.
+
+## Problem 3
+```{r}
+accel_df = read_csv("./accel_data.csv") %>% 
+  janitor::clean_names() %>%
+  mutate(
+    week_class = ifelse(
+      day %in% c("Sunday", "Saturday"), "Weekend", "Weekday"),
+    week = as.integer(week),
+    day_id = as.integer(day_id)) %>% 
+  relocate(week, day_id, day, week_class)
+knitr::kable(head(accel_df[1:4, ]))
+```
+This dataset has 35 observations and 1444 variables. Variables include "week", "day_id", "day", "week_class" and 1440 "activity_i" variables which are the activity counts for each minute of a 24-hour day starting at midnight.
+
+```{r}
+agg_min_df = accel_df %>%
+  mutate(activity_day = rowSums(accel_df[,c(5:1444)])) %>%
+  relocate(week, day_id, day, week_class, activity_day)
+
+tot_df = agg_min_df %>%
+  group_by(day) %>%
+  summarise(tot_act = sum(activity_day))
+knitr::kable(tot_df)
+```
+
+The patient usually has higher activity counts at the middle of a week, i.e. Wednesday, Thursday and Friday.
+
+```{r}
+accel_panel_df = accel_df %>%
+  pivot_longer(
+    activity_1:activity_1440,
+    names_to = "activity_min",
+    values_to = "activity_counts",
+    names_prefix = "activity_"
+  ) %>%
+  mutate(activity_min = as.numeric(activity_min)) %>%
+  group_by(day, activity_min ) %>%
+  summarise(sum_activity_counts = sum(activity_counts)) %>%
+  filter(sum_activity_counts > 2000) %>%
+  mutate(day = factor(
+    day, levels = c("Sunday", "Monday", "Tuesday",
+                         "Wednesday", "Thursday", "Friday", "Saturday")))
+
+ggplot(accel_panel_df, 
+       aes(x = activity_min, y = sum_activity_counts, 
+           group = day, color = day)) + 
+  geom_point(alpha = 0.5) 
+```
+
+The activity counts rose significantly on Friday around 9 PM and Saturday around 11 AM.
